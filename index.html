@@ -17,22 +17,50 @@
 
 <!-- <script src="/learnBlob.js"></script> -->
 
+<script src="/spark-md5.min.js"></script>
+
 <script>
   const uploadFileEle = document.querySelector("#uploadFile");
   const MB = 1048576
   const chunkSize = 5 * MB// 单位MB
 
-  function upload() {
+  async function upload() {
     const [file] = uploadFileEle.files
-
     chunkCount = Math.ceil(file.size / (chunkSize))
     const chunkList = sliceFile({ file, chunkCount, chunkSize })
     console.log(chunkList)
+    //使用SparkMD5暴露的ArrayBuffer接口来获取哈希
+    const spark = new SparkMD5.ArrayBuffer()
+    const reader = new FileReader()
+
+    const hashChunkList = await Promise.all(chunkList.map(file =>
+      //通过promise来处理回调保证结果顺序
+      new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        //读取blob格式文件
+        reader.readAsArrayBuffer(file)
+        //读取blob成ArrayBuffer时的回调
+        reader.onload = (e) => {
+          //将ArrayBuffer添加给spark
+          spark.append(e.target.result)
+          //结束添加，并计算得到hash值
+          resolve({ hash: spark.end(), file })
+        }
+        reader.onerror = (e) => {
+          reject(e)
+          reader.abort();
+        }
+      })
+    ))
+    console.log(hashChunkList)
+
   }
 
+  //切片函数
   function sliceFile({ file, chunkCount, chunkSize }) {
     return new Array(chunkCount).fill().map((_, index) => file.slice(index * chunkSize, (index + 1) * chunkSize))
   }
+
 </script>
 
 </html>
