@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>bigFileUploadDemo</title>
+</head>
+
+<body>
+
+  <input id="uploadFile" type="file" />
+  <button id="submit" onclick="upload()">上传文件</button>
+
+</body>
+
+<!-- <script src="/learnBlob.js"></script> -->
+
+<script>
+  const uploadFileEle = document.querySelector("#uploadFile");
+  const MB = 1048576
+  const chunkSize = 5 * MB// 单位MB
+
+  function upload() {
+    const [file] = uploadFileEle.files
+
+    chunkCount = Math.ceil(file.size / (chunkSize))
+    const chunkList = sliceFile({ file, chunkCount, chunkSize })
+    console.log(chunkList)
+  }
+
+  function sliceFile({ file, chunkCount, chunkSize }) {
+    return new Array(chunkCount).fill().map((_, index) => file.slice(index * chunkSize, (index + 1) * chunkSize))
+  }
+</script>
+
+</html>
