@@ -28,12 +28,11 @@
     const [file] = uploadFileEle.files
     chunkCount = Math.ceil(file.size / (chunkSize))
     const chunkList = sliceFile({ file, chunkCount, chunkSize })
-    console.log(chunkList)
     //使用SparkMD5暴露的ArrayBuffer接口来获取哈希
     const spark = new SparkMD5.ArrayBuffer()
     const reader = new FileReader()
 
-    const hashChunkList = await Promise.all(chunkList.map(file =>
+    const hashChunkList = await Promise.all(chunkList.map((file, chunkIndex) =>
       //通过promise来处理回调保证结果顺序
       new Promise((resolve, reject) => {
         const reader = new FileReader()
@@ -44,7 +43,7 @@
           //将ArrayBuffer添加给spark
           spark.append(e.target.result)
           //结束添加，并计算得到hash值
-          resolve({ hash: spark.end(), file })
+          resolve({ hash: spark.end(), file, chunkIndex })
         }
         reader.onerror = (e) => {
           reject(e)
