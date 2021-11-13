@@ -1,23 +1,12 @@
 const router = require("koa-router")();
 const path = require("path");
-const fs = require("fs");
+const fs = require("fs-extra");
 const multer = require("@koa/multer");
 
 // 存储上传文件的目录
 const UPLOAD_DIR = path.join(__dirname, "../public/temp");
 
-const storage = multer.diskStorage({
-  destination: async function (req, file, cb) {
-    // 设置文件的存储目录
-    cb(null, UPLOAD_DIR);
-  },
-  filename: function (req, file, cb) {
-    // 设置文件名
-    cb(null, `${file.originalname}`);
-  },
-});
-
-const multerUpload = multer({ storage });
+const multerUpload = multer();
 
 router.get("/", async (ctx, next) => {
   await ctx.render("index", {
@@ -27,9 +16,18 @@ router.get("/", async (ctx, next) => {
 
 router.post(
   "/upload",
+  //使用@koa/multer解析文件
+  multerUpload.fields([
+    {
+      name: "chunk", // 与FormData表单项的fieldName想对应
+    },
+  ]),
   async (ctx, next) => {
     try {
-      await next();
+      console.log(ctx.request.files);
+      sss;
+      //上传时清空暂存目录
+      fs.emptyDir(UPLOAD_DIR);
       ctx.body = {
         code: 0,
         msg: "文件上传成功",
@@ -40,12 +38,7 @@ router.post(
         msg: "文件上传失败",
       };
     }
-  },
-  multerUpload.fields([
-    {
-      name: "chunk", // 与FormData表单项的fieldName想对应
-    },
-  ])
+  }
 );
 
 router.get("/merge", async (ctx, next) => {

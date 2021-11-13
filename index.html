@@ -29,11 +29,13 @@
     const [file] = uploadFileEle.files
     const fileInfo = await processFile(file)
     console.log(fileInfo)
-    fetchUpload(fileInfo.chunkList)
+    fetchUpload(fileInfo)
   }
 
-  async function fetchUpload(chunkList) {
+  async function fetchUpload({ hash, chunkList }) {
     const formdata = new FormData()
+    console.log(hash)
+    formdata.append('dirname', hash)
     chunkList.forEach(item => {
       formdata.append('chunk', item.chunk, item.hash)
     })
