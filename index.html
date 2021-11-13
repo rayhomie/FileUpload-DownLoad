@@ -27,12 +27,26 @@
 
   async function upload() {
     const [file] = uploadFileEle.files
-    const FileInfo = await processFile(file)
-    fetchExist(FileInfo)
+    const fileInfo = await processFile(file)
+    console.log(fileInfo)
+    fetchUpload(fileInfo.chunkList)
   }
 
-  async function fetchExist(file) {
-    const res = await fetch('http://127.0.0.1:3000/checkExist').then(res => res.json())
+  async function fetchUpload(chunkList) {
+    const formdata = new FormData()
+    chunkList.forEach(item => {
+      formdata.append('chunk', item.chunk, item.hash)
+    })
+    const res = await fetch(`http://127.0.0.1:3000/upload`, {
+      method: 'POST',
+      body: formdata
+    }).then(res => res.json())
+    console.log(res)
+  }
+
+  async function fetchMerge(file) {
+    const res = await fetch('http://127.0.0.1:3000/merge')
+      .then(res => res.json())
     console.log(res)
   }
 
