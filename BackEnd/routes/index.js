@@ -7,7 +7,7 @@ const multer = require("@koa/multer");
 
 // 存储上传文件的目录
 const UPLOAD_DIR = path.join(__dirname, "../public/temp");
-
+fs.ensureDir(UPLOAD_DIR);
 const multerUpload = multer();
 
 router.get("/", async (ctx, next) => {
