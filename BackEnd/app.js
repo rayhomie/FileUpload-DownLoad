@@ -14,7 +14,7 @@ const index = require("./routes/index");
 // error handler
 onerror(app);
 
-app.use(cors());
+app.use(cors({ origin: "*", methods: ["GET", "PUT", "POST"] }));
 
 // middlewares
 app.use(
