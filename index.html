@@ -24,17 +24,42 @@
   const MB = 1048576
   const chunkSize = 5 * MB// 单位MB
 
+
   async function upload() {
     const [file] = uploadFileEle.files
+    const FileInfo = await processFile(file)
+    fetchExist(FileInfo)
+  }
+
+  async function fetchExist(file) {
+    const res = await fetch('http://127.0.0.1:3000/checkExist').then(res => res.json())
+    console.log(res)
+  }
+
+  //文件处理函数
+  async function processFile(file) {
     chunkCount = Math.ceil(file.size / (chunkSize))
     const chunkList = sliceFile({ file, chunkCount, chunkSize })
 
     //通过promise来处理回调保证结果顺序
-    const hashChunkList = await Promise.all(chunkList.map((file, chunkIndex) =>
-      computeHash(file)
-    ))
-    console.log(hashChunkList)
-
+    const finalFile = (await Promise.all([
+      //完整文件的hash
+      { hash: await computeHash(file), file, type: 'complete' },
+      //分块文件的hash
+      ...chunkList.map(async (chunk, chunkIndex) =>
+        ({ hash: await computeHash(chunk), chunk, chunkIndex })
+      )
+    ]))//换一种数据结构来存储
+      .reduce((acc, fileItem) => {
+        if (fileItem.type === 'complete') {
+          acc = fileItem
+          acc.chunkList = []
+        } else {
+          acc.chunkList.push(fileItem)
+        }
+        return acc
+      }, {})
+    return finalFile
   }
 
   //切片函数
