@@ -28,28 +28,10 @@
     const [file] = uploadFileEle.files
     chunkCount = Math.ceil(file.size / (chunkSize))
     const chunkList = sliceFile({ file, chunkCount, chunkSize })
-    //使用SparkMD5暴露的ArrayBuffer接口来获取哈希
-    const spark = new SparkMD5.ArrayBuffer()
-    const reader = new FileReader()
 
+    //通过promise来处理回调保证结果顺序
     const hashChunkList = await Promise.all(chunkList.map((file, chunkIndex) =>
-      //通过promise来处理回调保证结果顺序
-      new Promise((resolve, reject) => {
-        const reader = new FileReader()
-        //读取blob格式文件
-        reader.readAsArrayBuffer(file)
-        //读取blob成ArrayBuffer时的回调
-        reader.onload = (e) => {
-          //将ArrayBuffer添加给spark
-          spark.append(e.target.result)
-          //结束添加，并计算得到hash值
-          resolve({ hash: spark.end(), file, chunkIndex })
-        }
-        reader.onerror = (e) => {
-          reject(e)
-          reader.abort();
-        }
-      })
+      computeHash(file)
     ))
     console.log(hashChunkList)
 
@@ -58,6 +40,28 @@
   //切片函数
   function sliceFile({ file, chunkCount, chunkSize }) {
     return new Array(chunkCount).fill().map((_, index) => file.slice(index * chunkSize, (index + 1) * chunkSize))
+  }
+
+  //计算单个文件哈希
+  function computeHash(file) {
+    //使用SparkMD5暴露的ArrayBuffer接口来获取哈希
+    const spark = new SparkMD5.ArrayBuffer()
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      //读取blob格式文件
+      reader.readAsArrayBuffer(file)
+      //读取blob成ArrayBuffer时的回调
+      reader.onload = (e) => {
+        //将ArrayBuffer添加给spark
+        spark.append(e.target.result)
+        //结束添加，并计算得到hash值
+        resolve(spark.end())
+      }
+      reader.onerror = (e) => {
+        reject(e)
+        reader.abort();
+      }
+    })
   }
 
 </script>
