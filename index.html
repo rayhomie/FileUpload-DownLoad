@@ -38,7 +38,7 @@
     return Promise.all(chunkList.map((item) => {
       const formdata = new FormData()
       formdata.append('chunk', item.chunk, item.hash)
-      return fetch(`http://bigfileupdate.rayhomie.icu/upload/${hash}`, {
+      return fetch(`https://bigfileupdate.rayhomie.icu/upload/${hash}`, {
         method: 'POST',
         body: formdata
       })
@@ -46,7 +46,7 @@
   }
 
   async function fetchMerge(hash, count) {
-    const res = await fetch(`http://bigfileupdate.rayhomie.icu/merge?file_hash=${hash}&count=${count}`)
+    const res = await fetch(`https://bigfileupdate.rayhomie.icu/merge?file_hash=${hash}&count=${count}`)
       .then(res => res.json())
     console.log(res)
   }
