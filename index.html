@@ -29,25 +29,24 @@
     const [file] = uploadFileEle.files
     const fileInfo = await processFile(file)
     console.log(fileInfo)
-    fetchUpload(fileInfo)
+    await fetchChunkUpload(fileInfo)
+    await fetchMerge(fileInfo.hash, fileInfo.chunkList.length)
+
   }
 
-  async function fetchUpload({ hash, chunkList }) {
-    const formdata = new FormData()
-    console.log(hash)
-    formdata.append('dirname', hash)
-    chunkList.forEach(item => {
+  async function fetchChunkUpload({ hash, chunkList }) {
+    return Promise.all(chunkList.map((item) => {
+      const formdata = new FormData()
       formdata.append('chunk', item.chunk, item.hash)
-    })
-    const res = await fetch(`http://127.0.0.1:3000/upload`, {
-      method: 'POST',
-      body: formdata
-    }).then(res => res.json())
-    console.log(res)
+      return fetch(`http://127.0.0.1:3000/upload/${hash}`, {
+        method: 'POST',
+        body: formdata
+      })
+    }))
   }
 
-  async function fetchMerge(file) {
-    const res = await fetch('http://127.0.0.1:3000/merge')
+  async function fetchMerge(hash, count) {
+    const res = await fetch(`http://127.0.0.1:3000/merge?file_hash=${hash}&count=${count}`)
       .then(res => res.json())
     console.log(res)
   }
@@ -63,7 +62,7 @@
       { hash: await computeHash(file), file, type: 'complete' },
       //分块文件的hash
       ...chunkList.map(async (chunk, chunkIndex) =>
-        ({ hash: await computeHash(chunk), chunk, chunkIndex })
+        ({ hash: `${await computeHash(chunk)}_${chunkIndex}`, chunk, chunkIndex })
       )
     ]))//换一种数据结构来存储
       .reduce((acc, fileItem) => {

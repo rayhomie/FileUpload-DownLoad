@@ -1,6 +1,8 @@
 const router = require("koa-router")();
 const path = require("path");
 const fs = require("fs-extra");
+const ofs = require("fs");
+
 const multer = require("@koa/multer");
 
 // 存储上传文件的目录
@@ -15,7 +17,7 @@ router.get("/", async (ctx, next) => {
 });
 
 router.post(
-  "/upload",
+  "/upload/:dirname",
   //使用@koa/multer解析文件
   multerUpload.fields([
     {
@@ -24,10 +26,16 @@ router.post(
   ]),
   async (ctx, next) => {
     try {
-      console.log(ctx.request.files);
-      sss;
-      //上传时清空暂存目录
-      fs.emptyDir(UPLOAD_DIR);
+      const files = ctx.request.files.chunk;
+      console.log(files);
+      //分块文件目录（即文件的完整文件的hash）
+      const dir_path = path.join(UPLOAD_DIR, ctx.params.dirname);
+      //确保文件夹
+      await fs.ensureDir(dir_path);
+      //写入分块文件
+      files.forEach((file) =>
+        fs.outputFile(path.join(dir_path, file.originalname), file.buffer)
+      );
       ctx.body = {
         code: 0,
         msg: "文件上传成功",
@@ -42,7 +50,27 @@ router.post(
 );
 
 router.get("/merge", async (ctx, next) => {
-  ctx.body = "文件上传成功";
+  try {
+    const { file_hash, count } = ctx.query;
+    const dir_path = path.join(UPLOAD_DIR, file_hash);
+    await ofs.readdir(dir_path, (err, data) => {
+      if (err || data.length !== +count) {
+        throw new Error(err.toString());
+      }
+    });
+    console.log("文件合并完成");
+    ctx.body = {
+      code: 0,
+      msg: "文件合并完成",
+    };
+  } catch (err) {
+    fs.emptyDirSync(dir_path);
+    ctx.body = {
+      code: 1,
+      msg: "文件合并失败",
+      reason: err,
+    };
+  }
 });
 
 module.exports = router;
