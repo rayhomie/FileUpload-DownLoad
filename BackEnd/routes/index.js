@@ -53,11 +53,10 @@ router.get("/merge", async (ctx, next) => {
   try {
     const { file_hash, count } = ctx.query;
     const dir_path = path.join(UPLOAD_DIR, file_hash);
-    await ofs.readdir(dir_path, (err, data) => {
-      if (err || data.length !== +count) {
-        throw new Error(err.toString());
-      }
-    });
+    const data = ofs.readdirSync(dir_path);
+    if (data.length !== +count) {
+      throw new Error(err.toString());
+    }
     console.log("文件合并完成");
     ctx.body = {
       code: 0,
