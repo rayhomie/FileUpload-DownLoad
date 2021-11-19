@@ -72,4 +72,19 @@ router.get("/merge", async (ctx, next) => {
   }
 });
 
+// 以附件形式下载
+// http://localhost:9000/file?filename=mouth.png
+router.get("/file", async (ctx, next) => {
+  const { filename } = ctx.query;
+  const STATIC_PATH = path.join(__dirname, "../static/");
+  const filePath = STATIC_PATH + filename;
+  const fStats = ofs.statSync(filePath);
+  ctx.set({
+    "Content-Type": "application/octet-stream",
+    "Content-Disposition": `attachment; filename=${filename}`,
+    "Content-Length": fStats.size,
+  });
+  ctx.body = ofs.createReadStream(filePath);
+});
+
 module.exports = router;
