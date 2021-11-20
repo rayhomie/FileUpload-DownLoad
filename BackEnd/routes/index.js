@@ -17,6 +17,7 @@ router.get("/", async (ctx, next) => {
   });
 });
 
+// 大文件上传文件分片接口
 router.post(
   "/upload/:dirname",
   //使用@koa/multer解析文件
@@ -50,6 +51,7 @@ router.post(
   }
 );
 
+// 大文件上传合并接口
 router.get("/merge", async (ctx, next) => {
   try {
     const { file_hash, count } = ctx.query;
@@ -102,6 +104,17 @@ router.get("/base64file", async (ctx, next) => {
       content: fileBuffer.toString("base64"),
     },
   };
+});
+
+// chunked下载
+router.get("/chunkedDownload", async (ctx, next) => {
+  const { filename } = ctx.query;
+  const STATIC_PATH = path.join(__dirname, "../static/");
+  const filePath = STATIC_PATH + filename;
+  ctx.set({
+    "Content-Type": "text/plain;charset=utf-8",
+  });
+  ctx.body = fs.createReadStream(filePath);
 });
 
 module.exports = router;
