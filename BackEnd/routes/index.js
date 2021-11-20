@@ -2,6 +2,7 @@ const router = require("koa-router")();
 const path = require("path");
 const fs = require("fs-extra");
 const ofs = require("fs");
+const mime = require("mime");
 
 const multer = require("@koa/multer");
 
@@ -85,6 +86,22 @@ router.get("/file", async (ctx, next) => {
     "Content-Length": fStats.size,
   });
   ctx.body = ofs.createReadStream(filePath);
+});
+
+// base64格式文件下载
+router.get("/base64file", async (ctx, next) => {
+  const { filename } = ctx.query;
+  const STATIC_PATH = path.join(__dirname, "../static/");
+  const filePath = STATIC_PATH + filename;
+  const fileBuffer = fs.readFileSync(filePath);
+  ctx.body = {
+    code: 1,
+    data: {
+      name: filename,
+      type: mime.getType(filename),
+      content: fileBuffer.toString("base64"),
+    },
+  };
 });
 
 module.exports = router;

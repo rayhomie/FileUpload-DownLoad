@@ -12,12 +12,13 @@
   <h3>base64 下载示例</h3>
   <img id="imgPreview" src="./BackEnd/static/pic1.jpg" />
   <select id="picSelect">
-    <option value="pic1">pic1.png</option>
-    <option value="pic2">pic2.png</option>
-    <option value="pic3">pic3.png</option>
+    <option value="pic1">pic1.jpg</option>
+    <option value="pic2">pic2.jpg</option>
+    <option value="pic3">pic3.jpg</option>
   </select>
   <button onclick="download()">下载</button>
 </body>
+<script src='https://personal-financ.oss-cn-chengdu.aliyuncs.com/cdn/fileSaver.min.js'></script>
 <script>
   const picSelectEle = document.querySelector("#picSelect");
   const imgPreviewEle = document.querySelector("#imgPreview");
@@ -26,19 +27,12 @@
     imgPreviewEle.src = "./BackEnd/static/" + picSelectEle.value + ".jpg";
   });
 
-  const request = axios.create({
-    baseURL: "http://localhost:3000",
-    timeout: 60000,
-  });
 
   async function download() {
-    const response = await request.get("/file", {
-      params: {
-        filename: picSelectEle.value + ".png",
-      },
-    });
-    if (response && response.data && response.data.code === 1) {
-      const fileData = response.data.data;
+    const response = await fetch(`http://localhost:9000/base64file?filename=${picSelectEle.value}.jpg`)
+      .then(res => res.json());
+    if (response && response.code === 1) {
+      const fileData = response.data;
       const { name, type, content } = fileData;
       const imgBlob = base64ToBlob(content, type);
       saveAs(imgBlob, name);
