@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>base64download</title>
+</head>
+
+<body>
+  <h3>base64 下载示例</h3>
+  <img id="imgPreview" src="./BackEnd/static/pic1.jpg" />
+  <select id="picSelect">
+    <option value="pic1">pic1.png</option>
+    <option value="pic2">pic2.png</option>
+    <option value="pic3">pic3.png</option>
+  </select>
+  <button onclick="download()">下载</button>
+</body>
+<script>
+  const picSelectEle = document.querySelector("#picSelect");
+  const imgPreviewEle = document.querySelector("#imgPreview");
+
+  picSelectEle.addEventListener("change", (event) => {
+    imgPreviewEle.src = "./BackEnd/static/" + picSelectEle.value + ".jpg";
+  });
+
+  const request = axios.create({
+    baseURL: "http://localhost:3000",
+    timeout: 60000,
+  });
+
+  async function download() {
+    const response = await request.get("/file", {
+      params: {
+        filename: picSelectEle.value + ".png",
+      },
+    });
+    if (response && response.data && response.data.code === 1) {
+      const fileData = response.data.data;
+      const { name, type, content } = fileData;
+      const imgBlob = base64ToBlob(content, type);
+      saveAs(imgBlob, name);
+    }
+  }
+
+  // base64转blob格式
+  function base64ToBlob(base64, mimeType) {
+    let bytes = window.atob(base64);
+    let ab = new ArrayBuffer(bytes.length);
+    let ia = new Uint8Array(ab);
+    for (let i = 0; i < bytes.length; i++) {
+      ia[i] = bytes.charCodeAt(i);
+    }
+    return new Blob([ab], { type: mimeType });
+  }
+  /*
+  在用户选择好需要下载的图片并点击下载按钮时，就会调用以上代码中的 download 函数。
+  在该函数内部，我们利用 axios 实例的 get 方法发起 HTTP 请求来获取指定的图片。
+  因为返回的是 base64 格式的图片，所以在调用 FileSaver 提供的 saveAs 方法前，
+  我们需要将 base64 字符串转换成 blob 对象，该转换是通过以下的 base64ToBlob 函数来完成
+  */
+</script>
+
+</html>
