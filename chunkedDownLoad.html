@@ -9,7 +9,7 @@
 </head>
 
 <body>
-  <h3>chunked 下载示例</h3>
+  <h3>chunked(流)下载示例</h3>
   <button onclick="download()">下载</button>
 </body>
 <script src='https://personal-financ.oss-cn-chengdu.aliyuncs.com/cdn/fileSaver.min.js'></script>
@@ -24,17 +24,21 @@
   }
 
   function processChunkedResponse(response) {
+    // 处理响应
     let text = "";
+    // 从响应体重获取可读的流，创建一个读取器
     let reader = response.body.getReader();
+    // 使用文本解码器
     let decoder = new TextDecoder();
-
     return readChunk();
 
     function readChunk() {
+      // 递归读取流
       return reader.read().then(appendChunks);
     }
 
     function appendChunks(result) {
+      // 递归通过流的形式，拿到结果合成文件
       let chunk = decoder.decode(result.value || new Uint8Array(), {
         stream: !result.done,
       });
@@ -51,6 +55,7 @@
   }
 
   function onChunkedResponseComplete(result) {
+    // 将文本数据转换成blob格式并使用filesave进行保存
     let blob = new Blob([result], {
       type: "text/plain;charset=utf-8",
     });
@@ -58,6 +63,7 @@
   }
 
   function onChunkedResponseError(err) {
+    // 异常处理
     console.error(err);
   }
 

@@ -106,7 +106,7 @@ router.get("/base64file", async (ctx, next) => {
   };
 });
 
-// chunked下载
+// chunked(流)下载
 router.get("/chunkedDownload", async (ctx, next) => {
   const { filename } = ctx.query;
   const STATIC_PATH = path.join(__dirname, "../static/");
