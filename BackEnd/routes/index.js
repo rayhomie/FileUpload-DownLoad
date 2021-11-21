@@ -113,6 +113,7 @@ router.get("/chunkedDownload", async (ctx, next) => {
   const filePath = STATIC_PATH + filename;
   ctx.set({
     "Content-Type": "text/plain;charset=utf-8",
+    "Transfer-Encoding": "chunked",
   });
   ctx.body = fs.createReadStream(filePath);
 });

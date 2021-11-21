@@ -677,7 +677,7 @@ router.get("/file", async (ctx, next) => {
   }
 ```
 
-### 7】chunked下载
+### 7】chunked（流）下载
 
 分块传输编码主要应用于如下场景，即要传输大量的数据，但是在请求在没有被处理完之前响应的长度是无法获得的。例如，当需要用从数据库中查询获得的数据生成一个大的 HTML 表格的时候，或者需要传输大量的图片的时候。
 
@@ -694,4 +694,88 @@ Transfer-Encoding: gzip, chunked
 - 分块长度使用 16 进制数字表示，以 `\r\n` 结尾；
 - 数据块紧跟在分块长度后面，也使用 `\r\n` 结尾，但数据不包含 `\r\n`；
 - 终止块是一个常规的分块，表示块的结束。不同之处在于其长度为 0，即 `0\r\n\r\n`。
+
+前端代码：
+
+```html
+<!DOCTYPE html>
+<html>
+<body>
+  <h3>chunked(流)下载示例</h3>
+  <button onclick="download()">下载</button>
+</body>
+<script src='https://personal-financ.oss-cn-chengdu.aliyuncs.com/cdn/fileSaver.min.js'></script>
+<script>
+  const chunkedUrl = "http://localhost:9000/chunkedDownload?filename=hello.txt";
+
+  function download() {
+    return fetch(chunkedUrl)
+      .then(processChunkedResponse)
+      .then(onChunkedResponseComplete)
+      .catch(onChunkedResponseError);
+  }
+
+  function processChunkedResponse(response) {
+    // 处理响应
+    let text = "";
+    // 从响应体重获取可读的流，创建一个读取器
+    let reader = response.body.getReader();
+    // 使用文本解码器
+    let decoder = new TextDecoder();
+    return readChunk();
+
+    function readChunk() {
+      // 递归读取流
+      return reader.read().then(appendChunks);
+    }
+
+    function appendChunks(result) {
+      // 递归通过流的形式，拿到结果合成文件
+      let chunk = decoder.decode(result.value || new Uint8Array(), {
+        stream: !result.done,
+      });
+      console.log("已接收到的数据：", chunk);
+      console.log("本次已成功接收", chunk.length, "bytes");
+      text += chunk;
+      console.log("目前为止共接收", text.length, "bytes\n");
+      if (result.done) {
+        return text;
+      } else {
+        return readChunk();
+      }
+    }
+  }
+
+  function onChunkedResponseComplete(result) {
+    // 将文本数据转换成blob格式并使用filesave进行保存
+    let blob = new Blob([result], {
+      type: "text/plain;charset=utf-8",
+    });
+    saveAs(blob, "hello.txt");
+  }
+
+  function onChunkedResponseError(err) {
+    // 异常处理
+    console.error(err);
+  }
+
+</script>
+</html>
+```
+
+后端代码：
+
+```js
+// chunked(流)下载
+router.get("/chunkedDownload", async (ctx, next) => {
+  const { filename } = ctx.query;
+  const STATIC_PATH = path.join(__dirname, "../static/");
+  const filePath = STATIC_PATH + filename;
+  ctx.set({
+    "Content-Type": "text/plain;charset=utf-8",
+    "Transfer-Encoding": "chunked",// 设置分块传输编码
+  });
+  ctx.body = fs.createReadStream(filePath);
+});
+```
 
