@@ -8,6 +8,7 @@ const serve = require("koa-static");
 const bodyparser = require("koa-bodyparser");
 const logger = require("koa-logger");
 const cors = require("koa-cors");
+const range = require("koa-range");
 
 const index = require("./routes/index");
 
@@ -15,6 +16,10 @@ const index = require("./routes/index");
 onerror(app);
 
 app.use(cors({ origin: "*", methods: ["GET", "PUT", "POST"] }));
+
+//206范围下载
+app.use(range);
+app.use(serve(__dirname + "/static"));
 
 // middlewares
 app.use(
