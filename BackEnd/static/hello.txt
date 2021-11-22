@@ -779,3 +779,90 @@ router.get("/chunkedDownload", async (ctx, next) => {
 });
 ```
 
+
+
+### 8】206范围下载
+
+HTTP 协议范围请求允许服务器只发送 HTTP 消息的一部分到客户端。范围请求在传送大的媒体文件，或者与文件下载的断点续传功能搭配使用时非常有用。如果在响应中存在 `Accept-Ranges` 首部（并且它的值不为 “none”），那么表示该服务器支持范围请求。
+
+在一个 Range 首部中，可以一次性请求多个部分，服务器会以 multipart 文件的形式将其返回。如果服务器返回的是范围响应，需要使用 **206 Partial Content** 状态码。假如所请求的范围不合法，那么服务器会返回 **416 Range Not Satisfiable** 状态码，表示客户端错误。服务器允许忽略 Range 首部，从而返回整个文件，状态码用 200 。**注意是请求头加上Rang:xxx**。
+
+**Range 语法：**
+
+```
+Range: <unit>=<range-start>-
+Range: <unit>=<range-start>-<range-end>
+Range: <unit>=<range-start>-<range-end>, <range-start>-<range-end>
+Range: <unit>=<range-start>-<range-end>, <range-start>-<range-end>, <range-start>-<range-end>
+```
+
+- `unit`：范围请求所采用的单位，通常是字节（bytes）。
+- `<range-start>`：一个整数，表示在特定单位下，范围的起始值。
+- `<range-end>`：一个整数，表示在特定单位下，范围的结束值。**这个值是可选的，如果不存在，表示此范围一直延伸到文档结束。**
+
+了解完 `Range` 语法之后，我们来看一下实际的使用示例：
+
+```shell
+# 单一范围
+$ curl http://i.imgur.com/z4d4kWk.jpg -i -H "Range: bytes=0-1023"
+# 多重范围
+$ curl http://www.example.com -i -H "Range: bytes=0-50, 100-150"
+```
+
+如果后端是koa的话可以使用 [koa-range](https://github.com/koajs/koa-range/blob/master/index.js) 来实现。
+
+```js
+const Koa = require("koa");
+const cors = require("@koa/cors");
+const serve = require("koa-static");
+const range = require("koa-range");
+
+const PORT = 3000;
+const app = new Koa();
+
+// 注册中间件
+app.use(cors());
+app.use(range);
+app.use(serve("."));
+
+app.listen(PORT, () => {
+  console.log(`应用已经启动：http://localhost:${PORT}/`);
+});
+```
+
+前端代码：
+
+```js
+async function download() {
+  try {
+    let rangeContent = await getBinaryContent(
+      "http://localhost:3000/file.txt",
+       0, 100, "text"
+    );
+    const blob = new Blob([rangeContent], {
+      type: "text/plain;charset=utf-8",
+    });
+    saveAs(blob, "hello.txt");
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+function getBinaryContent(url, start, end, responseType = "arraybuffer") {
+  return new Promise((resolve, reject) => {
+    try {
+      let xhr = new XMLHttpRequest();
+      xhr.open("GET", url, true);
+      xhr.setRequestHeader("range", `bytes=${start}-${end}`);
+      xhr.responseType = responseType;
+      xhr.onload = function () {
+        resolve(xhr.response);
+      };
+        xhr.send();
+    } catch (err) {
+        reject(new Error(err));
+    }
+  });
+}
+```
+
